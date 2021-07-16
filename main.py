@@ -170,7 +170,7 @@ if (mode_de == 1):
     c_ops.append(np.sqrt(kappa_de)*ad*ac)
 e_ops = [down*down.dag(),up*up.dag(),(down+up).unit()*(down+up).unit().dag(),(down-up).unit()*(down-up).unit().dag()]
 if (mode_dr == 1):
-    H = H + 2*(ad+ac)
+    H = H + 1*(ad+ac)
 
 result = mesolve(H, psi0, tlist, c_ops, e_ops, options=Options(nsteps=5000))
 
