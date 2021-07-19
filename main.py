@@ -5,17 +5,19 @@ import scqubits as scq
 from matplotlib import pyplot, animation
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import cmath
+import parameters
 
 scq.settings.T1_DEFAULT_WARNING=False
 scq.set_units("MHz") # All units in MHZ (or 1/MHz = us)
 
 # --Set Parameters--
-Ej = 5.0 # Josephson energy
-Ec = 5.0 # Charging energy
-ng = 0.0 # Transmon cutoff charge
-frequency = 5.0 # Cavity frequency
-anharmonicity = 5.0 # Qubit frequency
-g = 0.1 # coupling strength
+Ej = parameters.Ej
+Ec = parameters.Ec
+ng = parameters.ng
+frequency = parameters.frequency
+anharmonicity = parameters.anharmonicity
+g = parameters.g
 # --/Set Parameters--
 
 # --Take User's Specifications--
@@ -59,7 +61,6 @@ mode_in = int(input())
 if (mode_in != 1 and mode_in != 2 and mode_in != 3):
     print("Yo, get your act together. " + str(mode_in) + " wasn't an option.")
     exit()
-# --/Take User's Specifications--
 
 # Specify Output(s)
 print()
@@ -78,30 +79,10 @@ if (makeSphere != 1 and makeSphere != 0):
 elif (makeSphere == 1):
     print("The sphere animation will save to a .gif file. What would you like to name it?")
     name = str(input())
-plotStates = int(input("Plot energy states? {0} for no, {1} for yes"))
-if (plotStates != 1 and plotStates != 0):
-    print("Yo, get your act together. " + str(plotStates) + " wasn't an option.")
-    exit()
-elif (plotStates == 1):
-    print("Plot energy states against which parameter:")
-    print("1: Offset Charge (ng)")
-    print("2: Josephson Energy (Ej)")
-    print("3: Charging Energy (Ec)")
-    parameter = int(input())
-    if (parameter != 1 and parameter != 2 and parameter != 3):
-        print("Yo, get your act together. " + str(parameter) + " wasn't an option.")
-        exit()
-    elif (parameter == 1):
-        parameter = "ng"
-    elif (parameter == 2):
-        parameter = "EJ"
-    elif (parameter == 3):
-        parameter = "EC"
-    param_max = float(input("Enter range to sweep over (energy states will be plotted against +/- the entered value for the parameter you specified): "))
-    param_range = np.linspace(-1*param_max,param_max,100)
+# --/Take User's Specifications--
 
 # Create the Qubit
-qubit = scq.Transmon(EJ=Ec, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
+qubit = scq.Transmon(EJ=Ej, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
 wc = frequency*2*np.pi
 wa = anharmonicity*2*np.pi
 g = g*2*np.pi
@@ -184,7 +165,7 @@ if (printExpect == 1):
 # Create Bloch sphere animation
 if (makeSphere == 1):
     fig = pyplot.figure()
-    ax = Axes3D(fig, azim=-40, elev=30, auto_add_to_figure=False)
+    ax = Axes3D(fig, azim=-40, elev=30)
     sphere = qutip.Bloch(axes=ax)
 
     theta = [i * np.pi for i in result.expect[1]]
@@ -206,11 +187,6 @@ if (makeSphere == 1):
     plt.close()
     plt.close()
     print("Animation saved")
-
-# Create energy states plot
-if (plotStates == 1):
-    qubit.plot_evals_vs_paramvals(parameter, param_range, evals_count=6, subtract_ground=False)
-    plt.show()
 
 # Create probability plot
 if (makePlot == 1):

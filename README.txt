@@ -6,24 +6,37 @@ matplotlib
 ffmpeg
 h5py
 ipywidgets
+cmath
 
 HOW TO USE
-The "Set Parameters" section of the script is where you can input the parameters of the qubit to simulate. The parameters.txt file has a set of such parameters used in an actual qubit.
+The 'parameters' file is where you enter the parameters of the qubit you want to simulate. The example parameters.txt file has a set of such parameters used in an actual qubit.
 
-When you run the script, it will ask you a series of questions that will allow you to specify how to initialize the qubit, what type(s) of decoherence and noise you want, and what form(s) you want the output to be in.
+The main script asks you a series of questions to specify what type(s) of decoherence and noise you want, and what form(s) you want the output to be in.
+
+The initializer script allows you to initialize a qubit manually, starting in the |0] state, and using sigma-x, sigma-y, and sigma-z operators
+
+The qubitViewer script allows you to plot various characteristics of the qubit against ranges of certain parameters.
 
 TO FIX
  - When the qubit is initialized at halfway between |0] and |1] and only dissipation is used, the state still dephases
  - Initializing the qubit halfway between |0] and |1] puts and moves the vector along the xz plane, but initializing it at |1] makes it move along the yz plane
- - The bloch sphere animation will throw a warning and an error. It still works but it's annoying. (UPDATE: the given way of suppressing the warning will make the figure blank)
+ - The bloch sphere animation will throw a warning and an error. It still works but it's annoying.
+ - The initializer will only show you the Bloch sphere the first time, but not for any subsequent operations
 
 TO DO
- - Add using pulses (pi and pi/2 and the like) to initialize the qubit instead of simply starting the qubit in the desired state
+ - Add more sweeps to qubitViewer
+ - Restructure the initializer as a function that the simulation calls so that it can use the final state
  - Add more parameter sets to the parameters.txt file
  - Replace the current Hamiltonian with the more complete JC hamiltonian (it currently throws a variety of errors when used)
- - Show the current time (as it passes) in Bloch sphere animations
+ - FINAL GOAL: Add in a mode that simulates a driving pulse leading into Rabi oscillations
 
 CHANGELOG
+7/19/2021:
+ - Fixed the qubit setting its Ej value to the specified Ec value (whoops)
+ - Moved the eigenstate plot to a separate python file 'qubitViewer' and added other plot options
+ - Renamed the parameters txt file to 'example parameters' and made a new 'parameters' file that the other scripts read from
+ - Added an 'initializer' script that allows user to set up a qubit state manually for the main script to use
+
 7/15/2021:
  - User can now specify a name for the sphere animation file
  - Printing the expectation values now works
