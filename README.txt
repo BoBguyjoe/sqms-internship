@@ -14,8 +14,6 @@ The 'parameters' file is where you enter the parameters of the qubit you want to
 
 The main script asks you a series of questions to specify what type(s) of decoherence and noise you want, and what form(s) you want the output to be in.
 
-The initializer script allows you to initialize a qubit manually, starting in the |0] state, and using sigma-x, sigma-y, and sigma-z operators
-
 The qubitViewer script allows you to plot various characteristics of the qubit against ranges of certain parameters.
 
 TO FIX
