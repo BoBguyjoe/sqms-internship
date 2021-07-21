@@ -53,7 +53,7 @@ elif (plotStates == 1):
 print()
 plotT1 = int(input("Plot effective T1? {0} for no, {1} for yes"))
 if (plotT1 != 1 and plotT1 != 0):
-    print("Yo, get your act together. " + str(plotStates) + " wasn't an option.")
+    print("Yo, get your act together. " + str(plotT1) + " wasn't an option.")
     exit()
 elif (plotT1 == 1):
     print("Plot effective T1 against which parameter:")
@@ -73,6 +73,31 @@ elif (plotT1 == 1):
     param_max2 = float(input("Enter range to sweep over (effective T1 will be plotted against +/- the entered value for the parameter you specified): "))
     param_range2 = np.linspace(-1*param_max2,param_max2,100)
 
+print()
+plotTransitions = int(input("Plot transition energies? {0} for no, {1} for yes."))
+if (plotTransitions != 1 and plotTransitions != 0):
+    print("Yo, get your act together. " + str(plotTransitions) + " wasn't an option.")
+    exit()
+elif (plotTransitions == 1):
+    print("Plot transition energies against which parameter:")
+    print("1: Offset Charge (ng)")
+    print("2: Josephson Energy (Ej)")
+    print("3: Charging Energy (Ec)")
+    parameter3 = int(input())
+    if (parameter3 != 1 and parameter3 != 2 and parameter3 != 3):
+        print("Yo, get your act together. " + str(parameter3) + " wasn't an option.")
+        exit()
+    elif (parameter3 == 1):
+        parameter3 = "ng"
+    elif (parameter3 == 2):
+        parameter3 = "EJ"
+    elif (parameter3 == 3):
+        parameter3 = "EC"
+    param_max3 = float(input(
+        "Enter range to sweep over (transition energies will be plotted against the parameter from 0 to this number): "))
+    param_range3 = np.linspace(0, param_max3, 100)
+
+
 # Create energy states plot
 if (plotStates == 1):
     qubit.plot_evals_vs_paramvals(parameter1, param_range1, evals_count=6, subtract_ground=False)
@@ -80,5 +105,9 @@ if (plotStates == 1):
 # Create effective T1 plot
 if (plotT1 == 1):
     qubit.plot_t1_effective_vs_paramvals(parameter2, param_range2)
+
+# Create transition energies plot
+if (plotTransitions == 1):
+    qubit.plot_dispersion_vs_paramvals('ng',parameter3,param_range3,transitions=(((0,1), (0,2))))
 
 plt.show()

@@ -21,16 +21,20 @@ TO FIX
  - When the qubit is initialized at halfway between |0] and |1] and only dissipation is used, the state still dephases
  - Initializing the qubit halfway between |0] and |1] puts and moves the vector along the xz plane, but initializing it at |1] makes it move along the yz plane
  - The bloch sphere animation will throw a warning and an error. It still works but it's annoying.
- - The initializer will only show you the Bloch sphere the first time, but not for any subsequent operations
 
 TO DO
  - Add more sweeps to qubitViewer
- - Restructure the initializer as a function that the simulation calls so that it can use the final state
  - Add more parameter sets to the parameters.txt file
  - Replace the current Hamiltonian with the more complete JC hamiltonian (it currently throws a variety of errors when used)
  - FINAL GOAL: Add in a mode that simulates a driving pulse leading into Rabi oscillations
 
 CHANGELOG
+7/20/2021:
+ - Moved the initializer script into the simulation script
+ - Fixed initializer only showing bloch sphere plot once
+ - Added pulse script, which is start of the rabi oscillations simulation (not for use)
+ - Added transition energies plot to qubitViewer (will hopefully be helpful for the rabi oscillator pulse)
+
 7/19/2021:
  - Fixed the qubit setting its Ej value to the specified Ec value (whoops)
  - Moved the eigenstate plot to a separate python file 'qubitViewer' and added other plot options
