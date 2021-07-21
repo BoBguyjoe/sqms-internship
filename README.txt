@@ -7,6 +7,7 @@ ffmpeg
 h5py
 ipywidgets
 cmath
+scipy
 
 HOW TO USE
 The 'parameters' file is where you enter the parameters of the qubit you want to simulate. The example parameters.txt file has a set of such parameters used in an actual qubit.

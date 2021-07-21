@@ -100,8 +100,8 @@ cavity = scq.Oscillator(E_osc=wc, truncated_dim=2)
 space = scq.HilbertSpace([qubit, cavity])
 space.add_interaction(g_strength=g, op1=qubit.n_operator, op2=cavity.creation_operator, add_hc=True)
 
-#H = wc*ad*ac + 0.5*wa*sz + g*(ad*sm + ac*sp) # JC Hamiltonian
-H = 0.5*wa*ac*ac*ad*ad # some other Hamiltonian I found in a qutip example code
+H = wc*ad*ac + 0.5*wa*sz + g*(ad*sm + ac*sp) # JC Hamiltonian
+#H = 0.5*wa*ac*ac*ad*ad # some other Hamiltonian I found in a qutip example code
 
 if (mode_in == 1):
     psi0 = up
@@ -120,9 +120,10 @@ elif (mode_in == 4):
         print("1: Rotate around x axis")
         print("2: Rotate around y axis")
         print("3: Rotate around z axis")
-        print("4: Finish and exit")
+        print("4: Reset to (|1], |0])")
+        print("5: Finish and exit")
         action = int(input())
-        if (action != 1 and action != 2 and action != 3 and action != 4):
+        if (action != 1 and action != 2 and action != 3 and action != 4 and action != 5):
             print("Yo, get your act together. " + str(action) + " wasn't an option.")
             exit()
 
@@ -130,18 +131,34 @@ elif (mode_in == 4):
             rotate = float(input("How much rotation: {1} for half-pi, {2} for pi")) / 2.0
         if (action == 1):
             psi0 = rotate * sigmax() * psi0
+            theta = np.pi * psi0[1][0][0].real
+            phi = np.pi * psi0[1][0][0].imag
+            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
+            sphere.make_sphere()
+            plt.show()
         if (action == 2):
             psi0 = rotate * sigmay() * psi0
+            theta = np.pi * psi0[1][0][0].real
+            phi = np.pi * psi0[1][0][0].imag
+            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
+            sphere.make_sphere()
+            plt.show()
         if (action == 3):
             psi0 = rotate * sigmaz() * psi0
+            theta = np.pi * psi0[1][0][0].real
+            phi = np.pi * psi0[1][0][0].imag
+            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
+            sphere.make_sphere()
+            plt.show()
         if (action == 4):
+            psi0 = basis(2,0)
+            theta = np.pi * psi0[1][0][0].real
+            phi = np.pi * psi0[1][0][0].imag
+            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
+            sphere.make_sphere()
+            plt.show()
+        if (action == 5):
             i = False
-
-        theta = np.pi * psi0[1][0][0].real
-        phi = np.pi * psi0[1][0][0].imag
-        sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
-        sphere.make_sphere()
-        plt.show()
 
 # Calculating Decoherence Times
 if (manualInput == 0):
