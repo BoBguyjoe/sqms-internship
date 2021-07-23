@@ -9,7 +9,7 @@ import cmath
 import parameters
 
 scq.settings.T1_DEFAULT_WARNING=False
-scq.set_units("MHz") # All units in MHZ (or 1/MHz = us)
+scq.set_units("GHz") # All units in GHZ (or 1/GHz = ns)
 
 # --Set Parameters--
 Ej = parameters.Ej
@@ -57,7 +57,6 @@ print("Initialize the qubit at:")
 print("1: |1]")
 print("2: |0]")
 print("3: 1/sqrt(2)(|0] + |1])")
-print("4: Initialize yourself")
 mode_in = int(input())
 if (mode_in != 1 and mode_in != 2 and mode_in != 3 and mode_in != 4):
     print("Yo, get your act together. " + str(mode_in) + " wasn't an option.")
@@ -84,24 +83,19 @@ elif (makeSphere == 1):
 
 # Create the Qubit
 qubit = scq.Transmon(EJ=Ej, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
+N = 2
 wc = frequency*2*np.pi
 wa = anharmonicity*2*np.pi
 g = g*2*np.pi
-ac = qutip.create(2)
-ad = qutip.destroy(2)
-sz = qutip.sigmaz()
-sp = qutip.sigmap()
-sm = qutip.sigmam()
-N = 2
-down = basis(N,0)
-up = basis(N,1)
+a = tensor(qeye(2),destroy(N))
+sm = tensor(destroy(2),qeye(N))
+down = tensor(basis(N,1),basis(N,0))
+up = tensor(basis(N,0),basis(N,1))
 
-cavity = scq.Oscillator(E_osc=wc, truncated_dim=2)
-space = scq.HilbertSpace([qubit, cavity])
-space.add_interaction(g_strength=g, op1=qubit.n_operator, op2=cavity.creation_operator, add_hc=True)
-
-H = wc*ad*ac + 0.5*wa*sz + g*(ad*sm + ac*sp) # JC Hamiltonian
-#H = 0.5*wa*ac*ac*ad*ad # some other Hamiltonian I found in a qutip example code
+#H = wc*((a.dag()*a)+0.5) + 0.5*wa*sm.dag()*sm + g*(a.dag()+a)*(sm+sm.dag()) #JC Hamiltonian
+#H = wc*a.dag()*a + wa*sm.dag()*sm + g*(a.dag()*sm + a*sm.dag()) # RWA Hamiltonian
+#H = 0.5*wa*a.dag()*a.dag()*a*a # some other Hamiltonian I found in a qutip example code
+H = wc*a.dag()*a + g*(a.dag()*sm + a*sm.dag())
 
 if (mode_in == 1):
     psi0 = up
@@ -109,62 +103,12 @@ elif (mode_in == 2):
     psi0 = down
 elif (mode_in == 3):
     psi0 = (up+down).unit()
-elif (mode_in == 4):
-    psi0 = basis(2, 0)
-    i = True
-    while (i == True):
-        sphere = qutip.Bloch()
-        sphere.vector_color = ['r']
-        print("The qubit's state is: " + str(psi0))
-        print("Which operator would you like to apply?")
-        print("1: Rotate around x axis")
-        print("2: Rotate around y axis")
-        print("3: Rotate around z axis")
-        print("4: Reset to (|1], |0])")
-        print("5: Finish and exit")
-        action = int(input())
-        if (action != 1 and action != 2 and action != 3 and action != 4 and action != 5):
-            print("Yo, get your act together. " + str(action) + " wasn't an option.")
-            exit()
-
-        if (action == 1 or action == 2 or action == 3):
-            rotate = float(input("How much rotation: {1} for half-pi, {2} for pi")) / 2.0
-        if (action == 1):
-            psi0 = rotate * sigmax() * psi0
-            theta = np.pi * psi0[1][0][0].real
-            phi = np.pi * psi0[1][0][0].imag
-            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
-            sphere.make_sphere()
-            plt.show()
-        if (action == 2):
-            psi0 = rotate * sigmay() * psi0
-            theta = np.pi * psi0[1][0][0].real
-            phi = np.pi * psi0[1][0][0].imag
-            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
-            sphere.make_sphere()
-            plt.show()
-        if (action == 3):
-            psi0 = rotate * sigmaz() * psi0
-            theta = np.pi * psi0[1][0][0].real
-            phi = np.pi * psi0[1][0][0].imag
-            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
-            sphere.make_sphere()
-            plt.show()
-        if (action == 4):
-            psi0 = basis(2,0)
-            theta = np.pi * psi0[1][0][0].real
-            phi = np.pi * psi0[1][0][0].imag
-            sphere.add_vectors([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
-            sphere.make_sphere()
-            plt.show()
-        if (action == 5):
-            i = False
 
 # Calculating Decoherence Times
 if (manualInput == 0):
     if (mode_di == 1):
         T1 = qubit.t1_effective() / (2*np.pi)
-    if (mode_de == 0):
+    if (mode_de == 1):
         Tphi = (mode_ng*qubit.tphi_1_over_f_ng() + mode_cc*qubit.tphi_1_over_f_cc()) / (2*np.pi)
 elif (manualInput == 1):
     print()
@@ -187,7 +131,7 @@ if (mode_de == 1):
 
 print()
 range = float(input("Enter which t value this should calculate to: "))
-if (range <=0):
+if (range <= 0):
     print("Yo, get your act together. This has to be a positive number")
     exit()
 
@@ -196,15 +140,15 @@ c_ops = []
 tlist = np.linspace(0,range,200)
 if (mode_di == 1):
     kappa_di = np.power(T1,-1)
-    c_ops.append(np.sqrt(kappa_di)*ad)
+    c_ops.append(np.sqrt(kappa_di)*a)
 if (mode_de == 1):
-    kappa_de = Tphi/2.0
-    c_ops.append(np.sqrt(kappa_de)*ad*ac)
+    kappa_de = np.power(Tphi/2.0,-1)
+    c_ops.append(np.sqrt(kappa_de)*a*a.dag())
 e_ops = [down*down.dag(),up*up.dag(),(down+up).unit()*(down+up).unit().dag(),(down-up).unit()*(down-up).unit().dag()]
 if (mode_dr == 1):
-    H = H + 1*(ad+ac)
+    H = H + wa*sm.dag()*sm
 
-result = mesolve(H, psi0, tlist, c_ops, e_ops, options=Options(nsteps=5000))
+result = mesolve(H, psi0, tlist, c_ops, e_ops, args={'A': 14.0,'s':0.05})
 
 # Print expectation values
 if (printExpect == 1):

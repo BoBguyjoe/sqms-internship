@@ -18,16 +18,21 @@ The qubitViewer script allows you to plot various characteristics of the qubit a
 
 TO FIX
  - When the qubit is initialized at halfway between |0] and |1] and only dissipation is used, the state still dephases
- - Initializing the qubit halfway between |0] and |1] puts and moves the vector along the xz plane, but initializing it at |1] makes it move along the yz plane
  - The bloch sphere animation will throw a warning and an error. It still works but it's annoying.
+ - The initializer does unexpected things for given commands
 
 TO DO
- - Add more sweeps to qubitViewer
  - Add more parameter sets to the parameters.txt file
- - Replace the current Hamiltonian with the more complete JC hamiltonian (it currently throws a variety of errors when used)
- - FINAL GOAL: Add in a mode that simulates a driving pulse leading into Rabi oscillations
+ - FINAL GOAL: Allow user to specify driving pulse frequency and amplitude
 
 CHANGELOG
+7/23/2021:
+ - Switched to the JC hamiltonian in the rotating frame
+ - Corrected the various operators to be tensor products, so that they actually act on the right parts of the system
+ - The default hamiltonian is the first and third terms of this JC hamiltonian. Driving adds in the usual second term
+ - Fixed bug that would prevent the simulation from using calculated Tphi value
+ - The initializer has been removed for the time being (until I fix it or decide to cut it)
+
 7/20/2021:
  - Moved the initializer script into the simulation script
  - Fixed initializer only showing bloch sphere plot once
