@@ -23,9 +23,16 @@ TO FIX
 
 TO DO
  - Add more parameter sets to the parameters.txt file
- - FINAL GOAL: Roll 'pulse.py' back into the main script so that a bloch animation can be made of its output
+ - Change square pulse to gaussian pules
+ - Adjust sweep method so that noise can be entered. To do this, change from doing many independent mesolves to a single one use a pulse train
 
 CHANGELOG
+7/30/2021:
+ - Folded the single drive pulse changing the state to the main simulation
+ - Folded the pulse sweep "experiment" to qubitViewer
+ - Added Bloch sphere animation to the rabi oscillations sweep
+ - Renamed 'qubitViewer' to 'sweeps'
+
 7/29/2021:
  - Added a 'pulse.py' file that collects a bunch of state measurements of a qubit when driven by a square pulse of varying length.
 

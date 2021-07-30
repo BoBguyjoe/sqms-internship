@@ -18,6 +18,9 @@ ng = parameters.ng
 frequency = parameters.frequency
 anharmonicity = parameters.anharmonicity
 g = parameters.g
+A = 0 # declaring pulse variables to prevent from running into a "variable not defined" error
+width = 0
+delay = 0
 # --/Set Parameters--
 
 # --Take User's Specifications--
@@ -25,6 +28,11 @@ mode_dr = int(input("Drive the qubit? {0} for no, {1} for yes"))
 if (mode_dr != 1 and mode_dr != 0):
     print("Yo, get your act together. " + str(mode_dr) + " wasn't an option.")
     exit()
+elif (mode_dr == 1):
+    print("The qubit will be driven with a square pulse.")
+    A = float(input("Amplitude: "))
+    width = float(input("Width: "))
+    delay = float(input("Delay: "))
 mode_di = int(input("Include Dissipation? {0} for no, {1} for yes"))
 if (mode_di != 1 and mode_di != 0):
     print("Yo, get your act together. " + str(mode_di) + " wasn't an option.")
@@ -72,37 +80,47 @@ makePlot = int(input("Create probability plot? {0} for no, {1} for yes"))
 if (makePlot != 1 and makePlot != 0):
     print("Yo, get your act together. " + str(makePlot) + " wasn't an option.")
     exit()
+elif (makePlot == 1):
+    print("The plot will save to a .png file. What would you like to name it?")
+    plotName = str(input())
 makeSphere = int(input("Create Bloch sphere animation? {0} for no, {1} for yes"))
 if (makeSphere != 1 and makeSphere != 0):
     print("Yo, get your act together. " + str(makeSphere) + " wasn't an option.")
     exit()
 elif (makeSphere == 1):
     print("The sphere animation will save to a .gif file. What would you like to name it?")
-    name = str(input())
+    sphereName = str(input())
 # --/Take User's Specifications--
 
 # Create the Qubit
 qubit = scq.Transmon(EJ=Ej, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
 N = 2
-wc = frequency*2*np.pi
-wa = anharmonicity*2*np.pi
+wc = frequency*2*np.pi # converting inputted frequencies to angular frequency
+wq = anharmonicity*2*np.pi
 g = g*2*np.pi
 a = tensor(qeye(2),destroy(N))
 sm = tensor(destroy(2),qeye(N))
-down = tensor(basis(N,1),basis(N,0))
-up = tensor(basis(N,0),basis(N,1))
+sx = tensor(sigmax(),qeye(N))
+sy = tensor(sigmay(),qeye(N))
+sz = tensor(sigmaz(),qeye(N))
+ground = tensor(basis(N,1),basis(N,0))
+excite = tensor(basis(N,0),basis(N,1))
 
-#H = wc*((a.dag()*a)+0.5) + 0.5*wa*sm.dag()*sm + g*(a.dag()+a)*(sm+sm.dag()) #JC Hamiltonian
-#H = wc*a.dag()*a + wa*sm.dag()*sm + g*(a.dag()*sm + a*sm.dag()) # RWA Hamiltonian
-#H = 0.5*wa*a.dag()*a.dag()*a*a # some other Hamiltonian I found in a qutip example code
-H = wc*a.dag()*a + g*(a.dag()*sm + a*sm.dag())
+H0 = -0.5*wq*sz # qubit Hamiltonian
+Hc = wc*(a.dag()*a) # cavity Hamiltonian
+Hi = g*(a.dag()*sm + a*sm.dag()) # interaction Hamiltonian
+Hdrive = sm+sm.dag() # drive Hamiltonian
 
 if (mode_in == 1):
-    psi0 = up
+    psi0 = excite
 elif (mode_in == 2):
-    psi0 = down
+    psi0 = ground
 elif (mode_in == 3):
-    psi0 = (up+down).unit()
+    psi0 = (excite+ground).unit()
+
+# Defining the drive pulse
+def pulse(t, args):
+    return args['A']*(t > args['delay']) - args['A']*(t>(args['width']+args['delay']))
 
 # Calculating Decoherence Times
 if (manualInput == 0):
@@ -135,36 +153,44 @@ if (range <= 0):
     print("Yo, get your act together. This has to be a positive number")
     exit()
 
-# Doing the thing
+# --Doing the thing--
 c_ops = []
 tlist = np.linspace(0,range,200)
+# Add dissipation to collapse operators
 if (mode_di == 1):
     kappa_di = np.power(T1,-1)
     c_ops.append(np.sqrt(kappa_di)*a)
+# Add dephasing to collapse operators
 if (mode_de == 1):
     kappa_de = np.power(Tphi/2.0,-1)
     c_ops.append(np.sqrt(kappa_de)*a*a.dag())
-e_ops = [down*down.dag(),up*up.dag(),(down+up).unit()*(down+up).unit().dag(),(down-up).unit()*(down-up).unit().dag()]
+# Set expectation value output to: [0] ground state, [1] excited state, [2] & [3] phase
+e_ops = [ground*ground.dag(),excite*excite.dag(),(ground+excite).unit()*(ground+excite).unit().dag(),(ground-excite).unit()*(ground-excite).unit().dag()]
+
+# Set the hamiltonian
 if (mode_dr == 1):
-    H = H + wa*sm.dag()*sm
+    H = [H0,[Hdrive,pulse]] # This adds on the driving term. The driving term has a coefficient that is the pulse
+else:
+    H = H0
 
-result = mesolve(H, psi0, tlist, c_ops, e_ops, args={'A': 14.0,'s':0.05})
+result = mesolve(H, psi0, tlist, c_ops, e_ops, args={'A': A, 'width': width, 'delay': delay}, options = Options(nsteps=5000))
+# --/Doing the thing--
 
-# Print expectation values
+# --Print expectation values--
 if (printExpect == 1):
-    i = 0
-    while (i < 4):
+    for i in np.arange(0,len(result.expect)):
         print(result.expect[i])
-        i=i+1
+# --/Print expectation values--
 
-# Create Bloch sphere animation
+# --Create Bloch sphere animation--
 if (makeSphere == 1):
     fig = pyplot.figure()
     ax = Axes3D(fig, azim=-40, elev=30)
     sphere = qutip.Bloch(axes=ax)
 
-    theta = [i * np.pi for i in result.expect[1]]
-    phi = [i * np.pi for i in result.expect[3]]
+    # Convert expectation values to spherical coordinates
+    theta = [i * np.pi for i in result.expect[0]]
+    phi = [i * np.pi for i in result.expect[2]]
 
     def animate(i):
         sphere.clear()
@@ -178,12 +204,13 @@ if (makeSphere == 1):
 
     ani = animation.FuncAnimation(fig, animate, np.arange(len(result.expect[1])),
                                   init_func=init, blit=False, repeat=False)
-    ani.save(name + ".gif", fps=50)
+    ani.save(sphereName + ".gif", fps=50)
     plt.close()
     plt.close()
     print("Animation saved")
+# --/Create Bloch sphere animation--
 
-# Create probability plot
+# --Create probability plot--
 if (makePlot == 1):
     plt.close()
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -196,4 +223,15 @@ if (makePlot == 1):
     ax.set_xlabel('Time', fontsize=20)
     ax.set_ylabel('Probability', fontsize=20)
     plt.ylim([-.1, 1.1])
+    plt.savefig(plotName + ".png")
+
+    # Plot pulse (if applicable)
+    if (mode_dr == 1):
+        fig, ax = plt.subplots(1, 1, figsize=(7, 5))
+        plt.rcParams.update({'font.size': 22})
+        ax.set_xlabel('Time', fontsize=24)
+        ax.set_ylabel('Amplitude', fontsize=24)
+        plt.title("Qubit Drive", fontsize=34)
+        ax.plot(tlist, [pulse(t, args={'A': A, 'width': width, 'delay': delay}) for t in tlist], 'r')
     plt.show()
+# --/Create probability plot--
