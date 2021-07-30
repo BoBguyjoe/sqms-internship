@@ -35,7 +35,7 @@ up = tensor(basis(N,0),basis(N,1))
 def pulse(t, args):
     return args['A'] * np.exp(-((t-.5) / args['s']) ** 2)
 
-A = 20
+A = 80
 s = 0.05
 width = 8
 delay = 0
@@ -53,12 +53,25 @@ def Hdrive2(t, args):
     return square(t, args)*np.exp(-1j*wd*t)*(a.dag() + a)
 
 
+lengths = np.arange(0,100,0.1)
+amps = np.zeros(len(lengths))
+
 H = [H0,[Hdrive1,square]]
-tlist = np.linspace(0,50,500)
 c_ops = []
+#tlist = np.linspace(0,50,1000)
 #c_ops.append(np.sqrt(kappa)*a)
 e_ops = [down*down.dag(),up*up.dag(),(down+up).unit()*(down+up).unit().dag(),(down-up).unit()*(down-up).unit().dag()]
-result = mesolve(H,down,tlist,c_ops,e_ops,args={'A': A,'s': s, 'width': width, 'delay': delay})
+
+for x in range(0,len(amps)):
+    tlist = np.linspace(0, lengths[int(x)] + 5, 50)
+    result = mesolve(H,down,tlist,c_ops,e_ops,args={'A': A, 'width': lengths[x], 'delay': 0},options = Options(nsteps=5000))
+    print(result.expect[0][49])
+    amps[x] = result.expect[0][49]
+
+#result = mesolve(H,down,tlist,c_ops,e_ops,args={'A': A,'s': s, 'width': width, 'delay': delay})
+
+print(lengths)
+print(amps)
 
 fig, ax = plt.subplots(1, 1, figsize=(7,5))
 plt.rcParams.update({'font.size': 22})
@@ -70,11 +83,7 @@ ax.plot(tlist, [square(t,args={'A': A,'s': s, 'width': width, 'delay': delay}) f
 
 fig, ax = plt.subplots(figsize=(12,6))
 plt.rcParams.update({'font.size': 22})
-ax.plot(tlist, np.real(result.expect[0]), 'b')
-ax.plot(tlist, np.real(result.expect[1]), 'r')
-ax.plot(tlist, np.real(result.expect[2]), 'm+')
-ax.plot(tlist, np.real(result.expect[3]), 'm--')
-ax.legend(("|0]", "|1]", "|0]+|1]", "|0]-|1]"))
+ax.plot(lengths, amps, 'b')
 ax.set_xlabel('Time',fontsize=24)
 ax.set_ylabel('Probability',fontsize=24)
 plt.ylim([-.1,1.1])

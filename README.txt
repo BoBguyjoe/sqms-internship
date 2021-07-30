@@ -23,9 +23,12 @@ TO FIX
 
 TO DO
  - Add more parameter sets to the parameters.txt file
- - FINAL GOAL: Allow user to specify driving pulse frequency and amplitude
+ - FINAL GOAL: Roll 'pulse.py' back into the main script so that a bloch animation can be made of its output
 
 CHANGELOG
+7/29/2021:
+ - Added a 'pulse.py' file that collects a bunch of state measurements of a qubit when driven by a square pulse of varying length.
+
 7/23/2021:
  - Switched to the JC hamiltonian in the rotating frame
  - Corrected the various operators to be tensor products, so that they actually act on the right parts of the system
