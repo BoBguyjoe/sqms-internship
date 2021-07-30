@@ -1,5 +1,6 @@
 From: https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.122.080503
-Ej = 34.0e3
-Ec = 264.0
-wc = 6.02e3
-g = 130.0
+Units are GHz
+Ej = 34.0
+Ec = 0.264
+wc = 6.02
+g = 0.13
