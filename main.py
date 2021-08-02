@@ -37,10 +37,10 @@ mode_di = int(input("Include Dissipation? {0} for no, {1} for yes"))
 if (mode_di != 1 and mode_di != 0):
     print("Yo, get your act together. " + str(mode_di) + " wasn't an option.")
     exit()
-mode_de = int(input("Include Dephasing? {0} for no, {1} for yes"))
-if (mode_de != 1 and mode_de != 0):
-    print("Yo, get your act together. " + str(mode_de) + " wasn't an option.")
-    exit()
+#mode_de = int(input("Include Dephasing? {0} for no, {1} for yes"))
+#if (mode_de != 1 and mode_de != 0):
+#    print("Yo, get your act together. " + str(mode_de) + " wasn't an option.")
+#    exit()
 
 print()
 print("Decoherence Times")
@@ -52,13 +52,13 @@ if (manualInput != 0 and manualInput != 1):
     exit()
 if (manualInput == 0):
     print()
-    if (mode_de == 1):
-        mode_ng = int(input("Source dephasing noise from {1} Critical Current, or {2} Offset Charge")) - 1
-        if (mode_ng != 0 and mode_ng != 1):
-            print("Yo, get your act together. " + str(mode_ng) + " wasn't an option.")
-            exit()
-        else:
-            mode_cc = 1 - mode_ng
+#    if (mode_de == 1):
+#        mode_ng = int(input("Source dephasing noise from {1} Critical Current, or {2} Offset Charge")) - 1
+#        if (mode_ng != 0 and mode_ng != 1):
+#            print("Yo, get your act together. " + str(mode_ng) + " wasn't an option.")
+#            exit()
+#        else:
+#            mode_cc = 1 - mode_ng
 
 print()
 print("Initialize the qubit at:")
@@ -109,7 +109,7 @@ excite = tensor(basis(N,0),basis(N,1))
 H0 = -0.5*wq*sz # qubit Hamiltonian
 Hc = wc*(a.dag()*a) # cavity Hamiltonian
 Hi = g*(a.dag()*sm + a*sm.dag()) # interaction Hamiltonian
-Hdrive = sm+sm.dag() # drive Hamiltonian
+Hdrive = a+a.dag() # drive Hamiltonian
 
 if (mode_in == 1):
     psi0 = excite
@@ -126,8 +126,8 @@ def pulse(t, args):
 if (manualInput == 0):
     if (mode_di == 1):
         T1 = qubit.t1_effective() / (2*np.pi)
-    if (mode_de == 1):
-        Tphi = (mode_ng*qubit.tphi_1_over_f_ng() + mode_cc*qubit.tphi_1_over_f_cc()) / (2*np.pi)
+#    if (mode_de == 1):
+#        Tphi = (mode_ng*qubit.tphi_1_over_f_ng() + mode_cc*qubit.tphi_1_over_f_cc()) / (2*np.pi)
 elif (manualInput == 1):
     print()
     if (mode_di == 1):
@@ -135,17 +135,17 @@ elif (manualInput == 1):
         if (T1 < 0):
             print("Yo, get your act together. This can't be a negative number")
             exit()
-    if (mode_de == 1):
-        Tphi = float(input("Enter Tphi value: "))
-        if (Tphi < 0):
-            print("Yo, get your act together. This can't be a negative number")
-            exit()
+#    if (mode_de == 1):
+#        Tphi = float(input("Enter Tphi value: "))
+#        if (Tphi < 0):
+#            print("Yo, get your act together. This can't be a negative number")
+#            exit()
 
 print()
 if (mode_di == 1):
     print("T1 = " + str(T1) + " microseconds")
-if (mode_de == 1):
-    print("Tphi = " + str(Tphi) + " microseconds")
+#if (mode_de == 1):
+#    print("Tphi = " + str(Tphi) + " microseconds")
 
 print()
 range = float(input("Enter which t value this should calculate to: "))
@@ -160,12 +160,14 @@ tlist = np.linspace(0,range,200)
 if (mode_di == 1):
     kappa_di = np.power(T1,-1)
     c_ops.append(np.sqrt(kappa_di)*a)
+
 # Add dephasing to collapse operators
-if (mode_de == 1):
-    kappa_de = np.power(Tphi/2.0,-1)
-    c_ops.append(np.sqrt(kappa_de)*a*a.dag())
-# Set expectation value output to: [0] ground state, [1] excited state, [2] & [3] phase
-e_ops = [ground*ground.dag(),excite*excite.dag(),(ground+excite).unit()*(ground+excite).unit().dag(),(ground-excite).unit()*(ground-excite).unit().dag()]
+#if (mode_de == 1):
+#    kappa_de = np.power(Tphi/2.0,-1)
+#    c_ops.append(np.sqrt(kappa_de)*a*a.dag())
+
+# Set expectation value output to: [0] excited state, [1] ground state, and [2] phase
+e_ops = [excite*excite.dag(),ground*ground.dag(),(ground+excite).unit()*(ground+excite).unit().dag()]
 
 # Set the hamiltonian
 if (mode_dr == 1):
@@ -189,8 +191,15 @@ if (makeSphere == 1):
     sphere = qutip.Bloch(axes=ax)
 
     # Convert expectation values to spherical coordinates
-    theta = [i * np.pi for i in result.expect[0]]
-    phi = [i * np.pi for i in result.expect[2]]
+    if (mode_dr == 0):
+        theta = [i * np.pi for i in result.expect[0]]
+        phi = [i * np.pi for i in result.expect[2]]
+    if (mode_dr == 1 and mode_di == 0):
+        theta = [(1-i) * np.pi for i in result.expect[1]]
+        phi = [(1-i) * np.pi for i in result.expect[2]]
+    if (mode_dr == 1 and mode_di == 1):
+        theta = [i * np.pi for i in result.expect[0]]
+        phi = [(1-i) * np.pi for i in result.expect[2]]
 
     def animate(i):
         sphere.clear()
@@ -215,11 +224,16 @@ if (makePlot == 1):
     plt.close()
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.rcParams.update({'font.size': 22})
-    ax.plot(tlist, np.real(result.expect[0]), 'b')
-    ax.plot(tlist, np.real(result.expect[1]), 'r')
-    ax.plot(tlist, np.real(result.expect[2]), 'm+')
-    ax.plot(tlist, np.real(result.expect[3]), 'm--')
-    ax.legend(("|0]", "|1]", "|0]+|1]", "|0]-|1]"))
+    if (mode_dr == 0):
+        ax.plot(tlist, np.real(result.expect[0]), 'r')
+        ax.plot(tlist, np.real(result.expect[2]), 'm--')
+    if (mode_dr == 1 and mode_di == 0):
+        ax.plot(tlist, np.real(1-result.expect[1]), 'r')
+        ax.plot(tlist, np.real(1-result.expect[2]), 'm--')
+    if (mode_dr == 1 and mode_di == 1):
+        ax.plot(tlist, np.real(result.expect[0]), 'r')
+        ax.plot(tlist, np.real(result.expect[2]), 'm--')
+    ax.legend(("|1]", "|0]+|1]"))
     ax.set_xlabel('Time', fontsize=20)
     ax.set_ylabel('Probability', fontsize=20)
     plt.ylim([-.1, 1.1])

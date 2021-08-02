@@ -12,21 +12,16 @@ scipy
 HOW TO USE
 The 'parameters' file is where you enter the parameters of the qubit you want to simulate. The example parameters.txt file has a set of such parameters used in an actual qubit.
 
-The main script asks you a series of questions to specify what type(s) of decoherence and noise you want, and what form(s) you want the output to be in.
+main.py is the simulation. It initializes a qubit that you can apply dissipation and/or a drive pulse to to see what happens
 
-The qubitViewer script allows you to plot various characteristics of the qubit against ranges of certain parameters.
-
-TO FIX
- - When the qubit is initialized at halfway between |0] and |1] and only dissipation is used, the state still dephases
- - The bloch sphere animation will throw a warning and an error. It still works but it's annoying.
- - The initializer does unexpected things for given commands
-
-TO DO
- - Add more parameter sets to the parameters.txt file
- - Change square pulse to gaussian pules
- - Adjust sweep method so that noise can be entered. To do this, change from doing many independent mesolves to a single one use a pulse train
+sweeps.py sweeps over a range of amplitudes and/or lengths of pulses and outputs what are called Rabi oscillations
 
 CHANGELOG
+8/2/2021:
+ - Added a 2D rabi sweep to sweeps.py, where it sweeps amplitude and length at the same time
+ - Fixed up which expectation values main.py plots (having a drive and noise makes it behave unexpectedly)
+ - Added capability for gaussian pulse
+
 7/30/2021:
  - Folded the single drive pulse changing the state to the main simulation
  - Folded the pulse sweep "experiment" to qubitViewer
