@@ -15,12 +15,14 @@ The 'parameters' file is where you enter the parameters of the qubit you want to
 main.py is the simulation. It initializes a qubit that you can apply dissipation and/or a drive pulse to to see what happens
 
 sweeps.py sweeps over a range of amplitudes and/or lengths of pulses and outputs what are called Rabi oscillations
+ - The 'sample' variable determines how many points to measure. Doing a 2D sweep takes quite some time, with only a value of 50 taking several minutes
 
 CHANGELOG
 8/2/2021:
  - Added a 2D rabi sweep to sweeps.py, where it sweeps amplitude and length at the same time
  - Fixed up which expectation values main.py plots (having a drive and noise makes it behave unexpectedly)
  - Added capability for gaussian pulse
+ - Removed dephasing from main.py (wasn't in the focus, but may add back in later)
 
 7/30/2021:
  - Folded the single drive pulse changing the state to the main simulation
