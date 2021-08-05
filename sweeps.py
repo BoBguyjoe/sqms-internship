@@ -135,5 +135,5 @@ if (makeSphere == 1):
         sphere.vector_color = ['r']
         return ax
 
-    ani = animation.FuncAnimation(fig, animate, np.arange(len(x)), init_func=init, blit=False, repeat=False)
+    ani = animation.FuncAnimation(fig, animate, np.arange(len(results)), init_func=init, blit=False, repeat=False)
     ani.save("rabi.gif", fps=10)
