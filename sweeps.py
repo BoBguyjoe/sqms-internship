@@ -24,10 +24,11 @@ T1 = 10.0
 mode_p = int(input("Vary the {1} amplitude, {2} length, or {3} both?"))
 if (mode_p == 1 or mode_p == 2):
     range = int(input("Enter the range of values to sweep over: "))
-    params = np.linspace(-range,range,sample)
     if (mode_p == 1):
+        params = np.linspace(-range, range, sample)
         width = float(input("Enter the pulse width (this will be constant): "))
     if (mode_p == 2):
+        params = np.linspace(0, range, sample)
         A = float(input("Enter the pulse amplitude (this will be constant): "))
     print()
     makeSphere = int(input("Make a Bloch sphere animation? {0} for no, {1} for yes"))
@@ -45,6 +46,8 @@ wc = frequency*2*np.pi
 wq = anharmonicity*2*np.pi
 a = tensor(qeye(2),destroy(N))
 sm = tensor(destroy(2),qeye(N))
+sx = tensor(sigmax(),qeye(N))
+sy = tensor(sigmay(),qeye(N))
 sz = tensor(sigmaz(),qeye(N))
 down = tensor(basis(N,1),basis(N,0))
 up = tensor(basis(N,0),basis(N,1))
@@ -65,8 +68,8 @@ H = [H0,[Hdrive,gauss]]
 
 c_ops = []
 kappa_di = np.power(T1,-1)
-#c_ops.append(np.sqrt(kappa_di)*a)
-e_ops = [down*down.dag()]
+#c_ops.append(np.sqrt(kappa_di)*sm)
+e_ops = [down*down.dag(), sx, sy, sz]
 
 if (mode_p == 1 or mode_p == 2):
     results = np.zeros(len(params))
@@ -76,15 +79,14 @@ if (mode_p == 1 or mode_p == 2):
             result = mesolve(H, down, tlist, c_ops, e_ops, args={'A': params[i], 'width': width, 'delay': 0}, options=Options(nsteps=5000))
         if (mode_p == 2):
             tlist = np.linspace(0, params[i] + 5, 50)
-        result = mesolve(H, down, tlist, c_ops, e_ops, args={'A': A, 'width': params[i], 'delay': 0}, options=Options(nsteps=5000))
+            result = mesolve(H, down, tlist, c_ops, e_ops, args={'A': A, 'width': params[i], 'delay': 0}, options=Options(nsteps=5000))
         results[i] = result.expect[0][len(tlist)-1]
-        print(result.expect[0][len(tlist)-1])
 
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.rcParams.update({'font.size': 22})
     ax.plot(params, results, 'b')
-    ax.set_xlabel('Pulse Parameter', fontsize=24)
-    ax.set_ylabel('Probability', fontsize=24)
+    ax.set_xlabel('Pulse Parameter', fontsize=20)
+    ax.set_ylabel('Probability', fontsize=20)
     plt.ylim([-.1, 1.1])
     plt.show()
 
@@ -97,11 +99,11 @@ if (mode_p == 3):
             results[j][i] = result.expect[0][len(tlist) - 1]
             print(str(i) + ", " + str(j) + ": " + str(results[i][j]))
 
-    # rotating the axes for the plot
+    # rotating the axes for the 2D plot
     Results = [[0 for x in np.arange(0,len(amplitudes))] for y in np.arange(0,len(widths))]
     for i in np.arange(0,len(results)):
         for j in np.arange(0,len(results[0])):
-            Results[i][j] = results[sample-1-i][j]
+            Results[i][j] = 1-results[sample-1-i][j]
 
     fig, ax = plt.subplots(figsize=(12,6))
     img = ax.imshow(Results,cmap = 'plasma', interpolation='none')
@@ -121,7 +123,7 @@ if (makeSphere == 1):
 
     # Convert expectation values to spherical coordinates
     theta = [i * np.pi for i in results]
-    phi = [0 for i in results]
+    phi = [0 * np.pi for i in results]
 
     def animate(i):
         sphere.clear()
@@ -133,5 +135,5 @@ if (makeSphere == 1):
         sphere.vector_color = ['r']
         return ax
 
-    ani = animation.FuncAnimation(fig, animate, np.arange(len(results)), init_func=init, blit=False, repeat=False)
-    ani.save("rabi.gif", fps=50)
+    ani = animation.FuncAnimation(fig, animate, np.arange(len(x)), init_func=init, blit=False, repeat=False)
+    ani.save("rabi.gif", fps=10)

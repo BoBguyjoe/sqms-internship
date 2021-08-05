@@ -1,6 +1,5 @@
 from qutip import *
 import numpy as np
-import matplotlib.pyplot as plt
 import scqubits as scq
 from matplotlib import pyplot, animation
 from mpl_toolkits.mplot3d import Axes3D
@@ -24,8 +23,8 @@ delay = 0
 # --/Set Parameters--
 
 # --Take User's Specifications--
-mode_dr = int(input("Drive the qubit? {0} for no, {1} for yes"))
-if (mode_dr != 1 and mode_dr != 0):
+mode_dr = int(input("Drive the qubit? {0} for no, {1} for a square pulse, {2} for a gaussian pulse"))
+if (mode_dr != 2 and mode_dr != 1 and mode_dr != 0):
     print("Yo, get your act together. " + str(mode_dr) + " wasn't an option.")
     exit()
 elif (mode_dr == 1):
@@ -33,14 +32,16 @@ elif (mode_dr == 1):
     A = float(input("Amplitude: "))
     width = float(input("Width: "))
     delay = float(input("Delay: "))
+elif (mode_dr == 2):
+    print("The qubit will be driven with a gaussian pulse.")
+    A = float(input("Amplitude: "))
+    width = float(input("Width: "))
 mode_di = int(input("Include Dissipation? {0} for no, {1} for yes"))
 if (mode_di != 1 and mode_di != 0):
     print("Yo, get your act together. " + str(mode_di) + " wasn't an option.")
     exit()
-#mode_de = int(input("Include Dephasing? {0} for no, {1} for yes"))
-#if (mode_de != 1 and mode_de != 0):
-#    print("Yo, get your act together. " + str(mode_de) + " wasn't an option.")
-#    exit()
+
+mode_dr = mode_dr - 1 # shifting this variable to make 'if' statements cleaner (If there's no drive, mode_dr < 0. If there's a drive, mode_dr >= 0)
 
 print()
 print("Decoherence Times")
@@ -52,13 +53,6 @@ if (manualInput != 0 and manualInput != 1):
     exit()
 if (manualInput == 0):
     print()
-#    if (mode_de == 1):
-#        mode_ng = int(input("Source dephasing noise from {1} Critical Current, or {2} Offset Charge")) - 1
-#        if (mode_ng != 0 and mode_ng != 1):
-#            print("Yo, get your act together. " + str(mode_ng) + " wasn't an option.")
-#            exit()
-#        else:
-#            mode_cc = 1 - mode_ng
 
 print()
 print("Initialize the qubit at:")
@@ -94,7 +88,7 @@ elif (makeSphere == 1):
 
 # Create the Qubit
 qubit = scq.Transmon(EJ=Ej, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
-N = 2
+N = 3
 wc = frequency*2*np.pi # converting inputted frequencies to angular frequency
 wq = anharmonicity*2*np.pi
 g = g*2*np.pi
@@ -103,8 +97,8 @@ sm = tensor(destroy(2),qeye(N))
 sx = tensor(sigmax(),qeye(N))
 sy = tensor(sigmay(),qeye(N))
 sz = tensor(sigmaz(),qeye(N))
-ground = tensor(basis(N,1),basis(N,0))
-excite = tensor(basis(N,0),basis(N,1))
+ground = tensor(basis(2,0), basis(N,0))
+excite = tensor(basis(2,1), basis(N,0))
 
 H0 = -0.5*wq*sz # qubit Hamiltonian
 Hc = wc*(a.dag()*a) # cavity Hamiltonian
@@ -119,8 +113,11 @@ elif (mode_in == 3):
     psi0 = (excite+ground).unit()
 
 # Defining the drive pulse
-def pulse(t, args):
+def square(t, args):
     return args['A']*(t > args['delay']) - args['A']*(t>(args['width']+args['delay']))
+
+def gauss(t, args):
+    return args['A'] * np.exp(-((t-.5) / args['width']) ** 2)
 
 # Calculating Decoherence Times
 if (manualInput == 0):
@@ -135,11 +132,6 @@ elif (manualInput == 1):
         if (T1 < 0):
             print("Yo, get your act together. This can't be a negative number")
             exit()
-#    if (mode_de == 1):
-#        Tphi = float(input("Enter Tphi value: "))
-#        if (Tphi < 0):
-#            print("Yo, get your act together. This can't be a negative number")
-#            exit()
 
 print()
 if (mode_di == 1):
@@ -159,19 +151,16 @@ tlist = np.linspace(0,range,200)
 # Add dissipation to collapse operators
 if (mode_di == 1):
     kappa_di = np.power(T1,-1)
-    c_ops.append(np.sqrt(kappa_di)*a)
+    c_ops.append(np.sqrt(kappa_di)*sm)
 
-# Add dephasing to collapse operators
-#if (mode_de == 1):
-#    kappa_de = np.power(Tphi/2.0,-1)
-#    c_ops.append(np.sqrt(kappa_de)*a*a.dag())
-
-# Set expectation value output to: [0] excited state, [1] ground state, and [2] phase
+# Set expectation value output to: [0] excited state, [1] ground state,and  [2] phase
 e_ops = [excite*excite.dag(),ground*ground.dag(),(ground+excite).unit()*(ground+excite).unit().dag()]
 
 # Set the hamiltonian
-if (mode_dr == 1):
-    H = [H0,[Hdrive,pulse]] # This adds on the driving term. The driving term has a coefficient that is the pulse
+if (mode_dr == 0):
+    H = [H0,[Hdrive,square]] # This adds on the driving term. The driving term has a coefficient that is the pulse
+elif (mode_dr == 1):
+    H = [H0,[Hdrive,gauss]]
 else:
     H = H0
 
@@ -191,15 +180,15 @@ if (makeSphere == 1):
     sphere = qutip.Bloch(axes=ax)
 
     # Convert expectation values to spherical coordinates
-    if (mode_dr == 0):
+    if (mode_dr < 0):
         theta = [i * np.pi for i in result.expect[0]]
         phi = [i * np.pi for i in result.expect[2]]
-    if (mode_dr == 1 and mode_di == 0):
+    if (mode_dr >= 0 and mode_di == 0):
         theta = [(1-i) * np.pi for i in result.expect[1]]
         phi = [(1-i) * np.pi for i in result.expect[2]]
-    if (mode_dr == 1 and mode_di == 1):
+    if (mode_dr >= 0 and mode_di == 1):
         theta = [i * np.pi for i in result.expect[0]]
-        phi = [(1-i) * np.pi for i in result.expect[2]]
+        phi = [i * np.pi for i in result.expect[2]]
 
     def animate(i):
         sphere.clear()
@@ -224,13 +213,13 @@ if (makePlot == 1):
     plt.close()
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.rcParams.update({'font.size': 22})
-    if (mode_dr == 0):
+    if (mode_dr < 0):
         ax.plot(tlist, np.real(result.expect[0]), 'r')
         ax.plot(tlist, np.real(result.expect[2]), 'm--')
-    if (mode_dr == 1 and mode_di == 0):
+    if (mode_dr >= 0 and mode_di == 0):
         ax.plot(tlist, np.real(1-result.expect[1]), 'r')
         ax.plot(tlist, np.real(1-result.expect[2]), 'm--')
-    if (mode_dr == 1 and mode_di == 1):
+    if (mode_dr >= 0 and mode_di == 1):
         ax.plot(tlist, np.real(result.expect[0]), 'r')
         ax.plot(tlist, np.real(result.expect[2]), 'm--')
     ax.legend(("|1]", "|0]+|1]"))
@@ -240,12 +229,21 @@ if (makePlot == 1):
     plt.savefig(plotName + ".png")
 
     # Plot pulse (if applicable)
+    if (mode_dr == 0):
+        fig, ax = plt.subplots(1, 1, figsize=(7, 5))
+        plt.rcParams.update({'font.size': 22})
+        ax.set_xlabel('Time', fontsize=24)
+        ax.set_ylabel('Amplitude', fontsize=24)
+        plt.title("Qubit Drive", fontsize=34)
+        ax.plot(tlist, [square(t, args={'A': A, 'width': width, 'delay': delay}) for t in tlist], 'r')
+
     if (mode_dr == 1):
         fig, ax = plt.subplots(1, 1, figsize=(7, 5))
         plt.rcParams.update({'font.size': 22})
         ax.set_xlabel('Time', fontsize=24)
         ax.set_ylabel('Amplitude', fontsize=24)
         plt.title("Qubit Drive", fontsize=34)
-        ax.plot(tlist, [pulse(t, args={'A': A, 'width': width, 'delay': delay}) for t in tlist], 'r')
+        ax.plot(tlist, [gauss(t, args={'A': A, 'width': width}) for t in tlist], 'r')
+
     plt.show()
 # --/Create probability plot--
