@@ -1,10 +1,11 @@
+# Created by Ben Blowers as a part of the Fermilab SQMS summer internship, 2021
+
 from qutip import *
 import numpy as np
 import scqubits as scq
 from matplotlib import pyplot, animation
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import cmath
 import parameters
 
 scq.settings.T1_DEFAULT_WARNING=False
@@ -14,13 +15,15 @@ scq.set_units("GHz") # All units in GHZ (or 1/GHz = ns)
 Ej = parameters.Ej
 Ec = parameters.Ec
 ng = parameters.ng
-frequency = parameters.frequency
-anharmonicity = parameters.anharmonicity
+cavity = parameters.cavity
+atom = parameters.atom
 g = parameters.g
 A = 0 # declaring pulse variables to prevent from running into a "variable not defined" error
 width = 0
 delay = 0
 # --/Set Parameters--
+
+sample = 200 # the number of points to take
 
 # --Take User's Specifications--
 mode_dr = int(input("Drive the qubit? {0} for no, {1} for a square pulse, {2} for a gaussian pulse"))
@@ -39,6 +42,10 @@ elif (mode_dr == 2):
 mode_di = int(input("Include Dissipation? {0} for no, {1} for yes"))
 if (mode_di != 1 and mode_di != 0):
     print("Yo, get your act together. " + str(mode_di) + " wasn't an option.")
+    exit()
+mode_de = int(input("Include Dephasing? {0} for no, {1} for yes"))
+if (mode_de != 1 and mode_de != 0):
+    print("Yo, get your act together. " + str(mode_de) + " wasn't an option.")
     exit()
 
 mode_dr = mode_dr - 1 # shifting this variable to make 'if' statements cleaner (If there's no drive, mode_dr < 0. If there's a drive, mode_dr >= 0)
@@ -89,14 +96,20 @@ elif (makeSphere == 1):
 # Create the Qubit
 qubit = scq.Transmon(EJ=Ej, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
 N = 3
-wc = frequency*2*np.pi # converting inputted frequencies to angular frequency
-wq = anharmonicity*2*np.pi
+wc = cavity*2*np.pi # converting inputted frequencies to angular frequency
+wq = atom*2*np.pi
 g = g*2*np.pi
+
+# Create the operators
+# These are all tensor products between an operator an an identity matrix. The position of the operator in this product depends on
+# which part of the system the operator is acting on. The left slot is for qubit operators, the right slot is for cavity operators
 a = tensor(qeye(2),destroy(N))
 sm = tensor(destroy(2),qeye(N))
 sx = tensor(sigmax(),qeye(N))
 sy = tensor(sigmay(),qeye(N))
 sz = tensor(sigmaz(),qeye(N))
+
+# The states are also set as tensor products. The cavity is always set to the ground state
 ground = tensor(basis(2,0), basis(N,0))
 excite = tensor(basis(2,1), basis(N,0))
 
@@ -110,7 +123,7 @@ if (mode_in == 1):
 elif (mode_in == 2):
     psi0 = ground
 elif (mode_in == 3):
-    psi0 = (excite+ground).unit()
+    psi0 = (excite+ground).unit() # creates a superposition state halfway between |0] and |1]
 
 # Defining the drive pulse
 def square(t, args):
@@ -122,9 +135,15 @@ def gauss(t, args):
 # Calculating Decoherence Times
 if (manualInput == 0):
     if (mode_di == 1):
-        T1 = qubit.t1_effective() / (2*np.pi)
-#    if (mode_de == 1):
-#        Tphi = (mode_ng*qubit.tphi_1_over_f_ng() + mode_cc*qubit.tphi_1_over_f_cc()) / (2*np.pi)
+        noise = int(input("Source dissipation from: {1} capacitive noise, {2} charge impedance, or {3} both"))
+        if (noise == 1):
+            T1 = qubit.t1_capacitive() / (2*np.pi) # The outputs of these scqubit functions are in angular frequencies, so they must be moved to regular frequency
+        if (noise == 2):
+            T1 = qubit.t1_charge_impedance() / (2*np.pi)
+        if (noise == 3):
+            T1 = qubit.t1_effective() / (2*np.pi)
+    if (mode_de == 1):
+        Tphi = qubit.tphi_1_over_f_cc() / (2*np.pi)
 elif (manualInput == 1):
     print()
     if (mode_di == 1):
@@ -132,12 +151,17 @@ elif (manualInput == 1):
         if (T1 < 0):
             print("Yo, get your act together. This can't be a negative number")
             exit()
+    if (mode_de == 1):
+        Tphi = float(input("Enter Tphi value: "))
+        if (Tphi < 0):
+            print("Yo, get your act together. This can't be a negative number")
+            exit()
 
 print()
 if (mode_di == 1):
     print("T1 = " + str(T1) + " microseconds")
-#if (mode_de == 1):
-#    print("Tphi = " + str(Tphi) + " microseconds")
+if (mode_de == 1):
+    print("Tphi = " + str(Tphi) + " microseconds")
 
 print()
 range = float(input("Enter which t value this should calculate to: "))
@@ -147,13 +171,20 @@ if (range <= 0):
 
 # --Doing the thing--
 c_ops = []
-tlist = np.linspace(0,range,200)
-# Add dissipation to collapse operators
+tlist = np.linspace(0,range,sample)
+
+# Add dissipation and dephasing to collapse operators
+# these collapse operators tell Qutip how the qubit should interact with the outside environment
 if (mode_di == 1):
     kappa_di = np.power(T1,-1)
-    c_ops.append(np.sqrt(kappa_di)*sm)
+    c_ops.append(np.sqrt(kappa_di)*sm) # dissipation
+if (mode_de == 1):
+    #kappa_de = np.power(Tphi,-1)
+    kappa_de = Tphi/2.0
+    c_ops.append(np.sqrt(kappa_de)*sm.dag()*sm) # dephasing
 
-# Set expectation value output to: [0] excited state, [1] ground state,and  [2] phase
+# Set expectation value output to: [0] excited state, [1] ground state, and [2] phase
+# these expectation values are the probability that the given state will be populated, with 1.0 being 100% and 0.0 being 0%
 e_ops = [excite*excite.dag(),ground*ground.dag(),(ground+excite).unit()*(ground+excite).unit().dag()]
 
 # Set the hamiltonian
@@ -164,6 +195,7 @@ elif (mode_dr == 1):
 else:
     H = H0
 
+# the mesolve function is the core of Qutip. This takes all the stuff we've set up and gives useful data
 result = mesolve(H, psi0, tlist, c_ops, e_ops, args={'A': A, 'width': width, 'delay': delay}, options = Options(nsteps=5000))
 # --/Doing the thing--
 
@@ -180,6 +212,7 @@ if (makeSphere == 1):
     sphere = qutip.Bloch(axes=ax)
 
     # Convert expectation values to spherical coordinates
+    # this part's a bit weird because sometimes only one of the resulting expectation values actually yields results
     if (mode_dr < 0):
         theta = [i * np.pi for i in result.expect[0]]
         phi = [i * np.pi for i in result.expect[2]]

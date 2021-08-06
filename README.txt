@@ -6,7 +6,6 @@ matplotlib
 ffmpeg
 h5py
 ipywidgets
-cmath
 scipy
 
 HOW TO USE
@@ -18,6 +17,11 @@ sweeps.py sweeps over a range of amplitudes and/or lengths of pulses and outputs
  - The 'sample' variable determines how many points to measure. Doing a 2D sweep takes quite some time, with only a value of 50 taking several minutes
 
 CHANGELOG
+8/6/2021:
+ - Re-added the different noise types
+ - Fixed Bloch animations for rabi oscillations so that the vector rotates
+ - Several bug fixes
+
 8/2/2021:
  - Added a 2D rabi sweep to sweeps.py, where it sweeps amplitude and length at the same time
  - Fixed up which expectation values main.py plots (having a drive and noise makes it behave unexpectedly)

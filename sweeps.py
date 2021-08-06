@@ -1,10 +1,11 @@
+# Created by Ben Blowers as a part of the Fermilab SQMS summer internship, 2021
+
 from qutip import *
 import numpy as np
 import scqubits as scq
 from matplotlib import pyplot, animation
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import cmath
 import parameters
 
 scq.settings.T1_DEFAULT_WARNING=False # suppresses some warning
@@ -13,12 +14,12 @@ scq.settings.T1_DEFAULT_WARNING=False # suppresses some warning
 Ej = parameters.Ej
 Ec = parameters.Ec
 ng = parameters.ng
-frequency = parameters.frequency
-anharmonicity = parameters.anharmonicity
+cavity = parameters.cavity
+atom = parameters.atom
 g = parameters.g
 # --/Set Parameters--
 
-sample = 50
+sample = 200
 
 # --Take User Inputs
 print("What sweep to do?")
@@ -76,8 +77,8 @@ if (type == 4):
 # Create the qubit
 qubit = scq.Transmon(EJ=Ej, EC=Ec, ng=ng, ncut=150) # ncut seems to be just a number that needs to be big
 N = 2
-wc = frequency*2*np.pi
-wq = anharmonicity*2*np.pi
+wc = cavity*2*np.pi
+wq = atom*2*np.pi
 a = tensor(qeye(2),destroy(N))
 sm = tensor(destroy(2),qeye(N))
 sx = tensor(sigmax(),qeye(N))
@@ -103,6 +104,8 @@ H = [H0,[Hdrive,gauss]]
 c_ops = []
 e_ops = [excite*excite.dag()]
 
+# this Rabi sweep works by running mesolve over and over again, using a different amplitude and/or length each time
+# the resulting states are stored into a 'results' array
 if (type == 4):
     if (mode_p == 1 or mode_p == 2):
         results = np.zeros(len(params))
