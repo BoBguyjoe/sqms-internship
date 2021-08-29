@@ -1,4 +1,5 @@
 # Created by Ben Blowers as a part of the Fermilab SQMS summer internship, 2021
+# GitHub: https://github.com/BoBguyjoe/sqms-internship
 
 from qutip import *
 import numpy as np
@@ -123,7 +124,7 @@ if (mode_in == 1):
 elif (mode_in == 2):
     psi0 = ground
 elif (mode_in == 3):
-    psi0 = (excite+ground).unit() # creates a superposition state halfway between |0] and |1]
+    psi0 = (ground+excite).unit() # creates a superposition state halfway between |0] and |1]
 
 # Defining the drive pulse
 def square(t, args):
@@ -180,7 +181,7 @@ if (mode_di == 1):
     c_ops.append(np.sqrt(kappa_di)*sm) # dissipation
 if (mode_de == 1):
     #kappa_de = np.power(Tphi,-1)
-    kappa_de = Tphi/2.0
+    kappa_de = np.power(Tphi,-1)/2.0
     c_ops.append(np.sqrt(kappa_de)*sm.dag()*sm) # dephasing
 
 # Set expectation value output to: [0] excited state, [1] ground state, and [2] phase

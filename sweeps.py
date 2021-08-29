@@ -19,7 +19,7 @@ atom = parameters.atom
 g = parameters.g
 # --/Set Parameters--
 
-sample = 200
+sample = 400
 
 # --Take User Inputs
 print("What sweep to do?")
@@ -99,7 +99,7 @@ H0 = -0.5*wq*sz # qubit Hamiltonian
 Hc = wc*(a.dag()*a) # cavity Hamiltonian
 Hi = g*(a.dag()*sm + a*sm.dag()) # interaction Hamiltonian
 Hdrive = a+a.dag() # drive Hamiltonian
-H = [H0,[Hdrive,gauss]]
+H = [H0,[Hdrive,square]] # replace 'square' with 'gauss' to use a gaussian pulse
 
 c_ops = []
 e_ops = [excite*excite.dag()]
@@ -111,10 +111,10 @@ if (type == 4):
         results = np.zeros(len(params))
         for i in np.arange(0,len(params)):
             if (mode_p == 1):
-                tlist = np.linspace(0, width + 5, 50)
+                tlist = np.linspace(0, width + 2, 10)
                 result = mesolve(H, excite, tlist, c_ops, e_ops, args={'A': params[i], 'width': width, 'delay': 0}, options=Options(nsteps=5000))
             if (mode_p == 2):
-                tlist = np.linspace(0, params[i] + 5, 50)
+                tlist = np.linspace(0, params[i] + 2, 10)
                 result = mesolve(H, excite, tlist, c_ops, e_ops, args={'A': A, 'width': params[i], 'delay': 0}, options=Options(nsteps=5000))
             results[i] = 1 - result.expect[0][len(tlist)-1]
             print(results[i])
@@ -187,7 +187,7 @@ if (type == 4):
         ani.save("rabi.gif", fps=15)
 
 if (type == 1):
-    qubit.plot_evals_vs_paramvals(parameter, params, evals_count=6, subtract_ground=False)
+    qubit.plot_evals_vs_paramvals(parameter, params, evals_count=5, subtract_ground=False)
     plt.show()
 
 if (type == 2):
